@@ -10,17 +10,54 @@ import software5.exercise6.Register;
 import software5.exercise6.User;
 import software5.exercise6.Login;
 import java.sql.*;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 
 public class CUIClass {
-    public static String url = "jdbc:mysql://localhost:3306/java_test?&useSSL=false&serverTimezone=UTC";
-    public static String username = "root";
-    public static String password = "Sun371502!";
+
     public static void main(String[] args) {
 
         Scanner scanner = new Scanner(System.in);
         new Gclass();
     }
+        public static String url = "jdbc:mysql://localhost:3306/java_test?&useSSL=false&serverTimezone=UTC";
+        public static String username = "root";
+        public static String password = "Sun371502!";
+
+    }
+class Hash{
+    private static final int SALT_LENGTH = 16; // 盐值长度(字节)
+    private static final int ITERATIONS = 100000; // 迭代次数
+    private static final int KEY_LENGTH = 256; // 密钥长度(位)
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA256"; // 算法
+
+    public static byte[] generateSalt() {
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[SALT_LENGTH];
+        random.nextBytes(salt);
+        return salt;
+    }
+    public static String hashPassword(String password, byte[] salt) {
+        try {
+            PBEKeySpec spec = new PBEKeySpec(
+                    password.toCharArray(),
+                    salt,
+                    ITERATIONS,
+                    KEY_LENGTH
+            );
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("密码哈希失败", e);
+        }
+    }
 }
+
 class Gclass extends JFrame{
     private static final long serialVersionUID=1L;
     JLabel username, password, info;
@@ -82,16 +119,22 @@ class Gclass extends JFrame{
                     if (b) {
                         System.out.println("register successful");
                         info.setText("register successful");
+                        JOptionPane.showMessageDialog(Gclass.this, "注册成功！");
+
+                        byte[] salt = Hash.generateSalt();
+                        String hashedPassword = Hash.hashPassword(password, salt);
+                        String saltBase64 = Base64.getEncoder().encodeToString(salt);
                         try {
                             Class.forName("com.mysql.cj.jdbc.Driver");
                             System.out.println("Successful location");
 
                             try (Connection conn = DriverManager.getConnection(CUIClass.url, CUIClass.username, CUIClass.password);
                                  PreparedStatement pstmt = conn.prepareStatement(
-                                         "INSERT INTO Regist(username, password, regist_date) VALUES (?, ?, ?)")) {
+                                         "INSERT INTO Regist(username, password, regist_date,salt) VALUES (?, ?, ?,?)")) {
                                 pstmt.setString(1, username);
-                                pstmt.setString(2, password);
+                                pstmt.setString(2, hashedPassword);
                                 pstmt.setString(3, dt);
+                                pstmt.setString(4, saltBase64);
                                 int affectedRows = pstmt.executeUpdate();
                             }
                         } catch (ClassNotFoundException sql_e) {
@@ -123,13 +166,13 @@ class Gclass extends JFrame{
                         System.out.println("Successful location");
 
                         Connection conn = DriverManager.getConnection(CUIClass.url, CUIClass.username, CUIClass.password);
-                        PreparedStatement pstmt = conn.prepareStatement(
-                                 "INSERT INTO Login(username, password, login_date) VALUES (?, ?, ?)");
-                        pstmt.setString(1, username);
-                        pstmt.setString(2, password);
-                        pstmt.setString(3, dt);
-                        int affectedRows = pstmt.executeUpdate();
-                        pstmt=conn.prepareStatement("SELECT * FROM Regist WHERE username = ?");
+//                        PreparedStatement pstmt = conn.prepareStatement(
+//                                 "INSERT INTO Login(username, password, login_date) VALUES (?, ?, ?)");
+//                        pstmt.setString(1, username);
+//                        pstmt.setString(2, password);
+//                        pstmt.setString(3, dt);
+//                        int affectedRows = pstmt.executeUpdate();
+                        PreparedStatement pstmt=conn.prepareStatement("SELECT * FROM Regist WHERE username = ?");
                         pstmt.setString(1, username);
                         ResultSet rs = pstmt.executeQuery();
                         while (rs.next()) {
@@ -155,7 +198,7 @@ class Gclass extends JFrame{
                         System.err.println("数据库错误：" + sql_e.getMessage());
                         JOptionPane.showMessageDialog(null, "数据库错误：" + sql_e.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
                     }
-
+                    Gclass.this.dispose();
                     new Run().run();
                 } else {
                     info.setText("login failed");
