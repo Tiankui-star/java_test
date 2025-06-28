@@ -59,7 +59,7 @@ public class Run {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500,600);
         frame.setLayout(new BorderLayout());
-        JPanel panel=new JPanel(new GridLayout(wrong,2,10, 10));
+        JPanel panel=new JPanel(new GridLayout(wrong/2,2,10, 10));
         for(String title:wrong_test){
             JLabel label = new JLabel(title);
             JTextField field=new JTextField(5);
@@ -111,21 +111,25 @@ public class Run {
                     add.set_int(a, b);
                     //add.show_int();
                     rsu= a+b;
+                    break;
                 }
                 case '-': {
                     sub.set_int(a, b);
                     //sub.show_int();
                     rsu= a-b;
+                    break;
                 }
                 case '*': {
                     mul.set_int(a, b);
                     //mul.show_int();
                     rsu= a*b;
+                    break;
                 }
                 case '/': {
                     div.set_int(a, b);
                     //div.show_int();
                     rsu= a/b;
+                    break;
                 }
             }
         return rsu;
@@ -337,7 +341,7 @@ public class Run {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(500, 600);
         frame.setLayout(new BorderLayout());
-        JPanel panel = new JPanel(new GridLayout(need_show, 2, 10, 10));
+        JPanel panel = new JPanel(new GridLayout(need_show/2, 2, 10, 10));
         for(String title:Titles){
             JLabel label=new JLabel(title);
             JTextField field = new JTextField(5);
